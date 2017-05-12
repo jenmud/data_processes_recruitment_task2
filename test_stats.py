@@ -85,15 +85,27 @@ class TestJSONParser(unittest.TestCase):
         # based on the sample output.json
         self.assertEqual(543, self.parser.option_count())
 
-    def test_get_competitions(self):
+    def test_get_competitions_by_name(self):
         # based on the sample output.json
         self.assertEqual(
             69,
-            len(list(self.parser.get_competitions("Super Rugby"))),
+            len(list(self.parser.get_competitions_by_name("Super Rugby"))),
         )
 
         self.assertIsInstance(
-            list(self.parser.get_competitions("Super Rugby"))[0],
+            list(self.parser.get_competitions_by_name("Super Rugby"))[0],
+            stats.Competition,
+        )
+
+    def test_get_competitions(self):
+        # based on the sample output.json
+        self.assertEqual(
+            543,
+            len(list(self.parser.get_competitions())),
+        )
+
+        self.assertIsInstance(
+            list(self.parser.get_competitions())[0],
             stats.Competition,
         )
 

@@ -1,4 +1,5 @@
 import abc
+import collections
 import csv
 import json
 from lxml import etree
@@ -51,13 +52,23 @@ class IStatsParser(object):
         pass
 
     @abc.abstractmethod
-    def get_competition(self, name):
+    def get_competitions_by_name(self, name):
         """
         Get all the competitions by name.
 
         :param name: Competition name you are filtering for.
         :type name: :class:`str`
         :returns: All the competitions found that match the provided name.
+        :rtype" iterable of :class:`~.Competition`
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_competitions(self):
+        """
+        Get all the competitions.
+
+        :returns: All the competitions found.
         :rtype" iterable of :class:`~.Competition`
         """
         pass
@@ -164,10 +175,8 @@ class JSONParser(IStatsParser):
         options = self.data.get("options", {})
         return len(options.get("option", []))
 
-    def get_competitions(self, name):
+    def get_competitions(self):
         for each in self.data.get("options", {}).get("option", []):
-            if each.get("competition", "") != name:
-                continue
 
             comp = Competition(
                 venue=each.get("venue"),
@@ -191,6 +200,12 @@ class JSONParser(IStatsParser):
 
             yield comp
 
+    def get_competitions_by_name(self, name):
+        for each in self.get_competitions():
+            if each.competition != name:
+                continue
+            yield each
+
 
 class XMLParser(IStatsParser):
     """
@@ -202,14 +217,11 @@ class XMLParser(IStatsParser):
     def option_count(self):
         return int(self.data.xpath("count(//options/option)"))
 
-    def get_competitions(self, name):
+    def get_competitions(self):
         for each in self.data.xpath("//options/option"):
             kwargs = {}
             for key, value in each.items():
                 kwargs[key] = value
-
-            if kwargs.get("competition", "") != name:
-                continue
 
             comp = Competition(
                 venue=kwargs.get("venue"),
@@ -236,6 +248,12 @@ class XMLParser(IStatsParser):
                 comp.add_selection(selection)
 
             yield comp
+
+    def get_competitions_by_name(self, name):
+        for each in self.get_competitions():
+            if each.competition != name:
+                continue
+            yield each
 
 
 class Reporter(object):
@@ -290,7 +308,7 @@ class Reporter(object):
         writer = csv.DictWriter(fh, fieldnames=fieldnames)
         writer.writeheader()
         comps = sorted(
-            self.parser.get_competitions(name),
+            self.parser.get_competitions_by_name(name),
             key=lambda x: x.closes
         )
         for each in comps:
@@ -309,11 +327,34 @@ class Reporter(object):
             )
 
     def summary(self):
-        return (
-            "Available options: {options_count}".format(
-                options_count=self.option_count(),
-            )
-        )
+        """
+        Generate a summary report.
+
+        .. note::
+
+            <Sport Name>
+              <Market Name>: <Total Count>
+
+        :returns: A summary report.
+        :rtype: :class:`str`
+        """
+        categories = collections.defaultdict(list)
+
+        for each in self.parser.get_competitions():
+            categories[each.sport].append(each)
+
+        summary = ""
+        for each in categories:
+            summary += "{}\n".format(each)
+
+            mn = collections.defaultdict(int)
+            for e in categories[each]:
+                mn[e.name] += 1
+
+            for k, v in mn.items():
+                summary += "  {}: {}\n".format(k, v)
+
+        return summary
 
 
 if __name__ == "__main__":
@@ -352,6 +393,12 @@ if __name__ == "__main__":
         help="Show how many options are available."
     )
 
+    args.add_argument(
+        "--summary",
+        action="store_true",
+        help="Show a complete summary report."
+    )
+
     ns = args.parse_args()
 
     if ns.comp_dump and not ns.comp:
@@ -377,3 +424,6 @@ if __name__ == "__main__":
     # Print out the option count.
     if ns.options is True:
         print("Available options: {}".format(reporter.option_count()))
+
+    if ns.summary is True:
+        print(reporter.summary())
