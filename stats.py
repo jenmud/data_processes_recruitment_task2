@@ -129,8 +129,6 @@ class Competition(object):
     :type sport: :class:`str`
     :param game: Team versing each other.
     :type game: :class:`str`
-    :param selections: Selection bets.
-    :type selections: iterable of :class:`~.Selection`
     """
     def __init__(self, venue, competition, closes, name, number, sport, game):
         self.venue = venue
