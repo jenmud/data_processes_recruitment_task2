@@ -39,6 +39,33 @@ def make_xml_loaded_reporter():
     return reporter
 
 
+class TestFunctions(unittest.TestCase):
+    def test_calc_market_percentage(self):
+        self.assertEqual(
+            1.0006253908692935,
+            stats.calc_market_percentage(
+                [
+                    1.95,
+                    2.05,
+                ]
+            ),
+        )
+
+        self.assertEqual(
+            1.1636844407287503,
+            stats.calc_market_percentage(
+                [
+                    1.30,
+                    7.90,
+                    14.65,
+                    5.90,
+                    33.20,
+                ]
+            ),
+        )
+
+
+
 class TestJSONParser(unittest.TestCase):
     def setUp(self):
         self.parser = stats.JSONParser()
@@ -114,4 +141,85 @@ class TestReporter(unittest.TestCase):
         self.assertEqual(
             "Available options: 543",
             self.reporter.summary(),
+        )
+
+class TestCompetition(unittest.TestCase):
+    def test_add_selection(self):
+        comp = stats.Competition(
+            venue="Dunedin",
+            competition="Super Rugby",
+            closes="2016-04-22 19:35:00",
+            name="Tri-Bet",
+            number=2023,
+            sport="Rugby Union",
+            game="Highlanders v Sharks",
+        )
+
+        sel = stats.Selection(
+            number=1,
+            name="Highlanders 8 & Over",
+            odds=170,
+            status="OK",
+        )
+
+        comp.add_selection(sel)
+        self.assertEqual(1, len(comp.selections))
+        self.assertEqual(set([sel]), comp.selections)
+
+        # no doulbe ups should happen
+        comp.add_selection(sel)
+        self.assertEqual(set([sel]), comp.selections)
+
+    def test_get_selections(self):
+        comp = stats.Competition(
+            venue="Dunedin",
+            competition="Super Rugby",
+            closes="2016-04-22 19:35:00",
+            name="Tri-Bet",
+            number=2023,
+            sport="Rugby Union",
+            game="Highlanders v Sharks",
+        )
+
+        sel1 = stats.Selection(
+            number=1,
+            name="Highlanders 8 & Over",
+            odds=170,
+            status="OK",
+        )
+
+        sel2 = stats.Selection(
+            number=2,
+            name="Sharks 8 & Over",
+            odds=700,
+            status="OK",
+        )
+
+        sel3 = stats.Selection(
+            number=3,
+            name="Either 7 & Under/Draw",
+            odds=260,
+            status="OK",
+        )
+
+        comp.add_selection(sel1)
+        comp.add_selection(sel2)
+        comp.add_selection(sel3)
+
+        self.assertEqual(
+            [
+                sel1,
+                sel2,
+                sel3,
+            ],
+            comp.get_selections(),
+        )
+
+        self.assertEqual(
+            [
+                sel1,
+                sel3,
+                sel2,
+            ],
+            comp.get_selections(key=lambda x: x.odds),
         )

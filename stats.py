@@ -3,7 +3,27 @@ import json
 from lxml import etree
 
 
+def calc_market_percentage(prices):
+    """
+    Calculate the market percentage for a given set of prices.
+
+    :param prices: Prices in cents used for the market percentage calculation.
+    :type prices: iterable of :class:`int`
+    :returns: Market price.
+    :rtype: :class:`float`
+    """
+    value = 0.0
+
+    for price in prices:
+      value = value + 1.0 / price
+
+    return value
+
+
 class IStatsParser(object):
+    """
+    Interface for a stats parser.
+    """
     metaclass=abc.ABCMeta
 
     def __init__(self):
@@ -29,6 +49,108 @@ class IStatsParser(object):
         """
         pass
 
+    @abc.abstractmethod
+    def get_competition(self, name):
+        """
+        Get all the competitions by name.
+
+        :param name: Competition name you are filtering for.
+        :type name: :class:`str`
+        :returns: All the competitions found that match the provided name.
+        :rtype" iterable of :class:`~.Competition`
+        """
+        pass
+
+
+class Selection(object):
+    """
+    Selection is a competition selection.
+
+    :param number: Number of the selection.
+    :type number: :class:`int`
+    :param name: Selection name.
+    :type name: :class:`str`
+    :param odds: Selection odds.
+    :type odds: :class:`int`
+    :param status: Selection status. Eg: OK
+    :type status: :class:`str`
+    """
+    def __init__(self, number, name, odds, status):
+        self.number = number
+        self.name = name
+        self.odds = odds
+        self.status = status
+
+    def __str__(self):
+        return (
+            "<{}> Number: {}, Odds: {}, Status: {}".format(
+                self.__class__.__name__,
+                self.number,
+                self.odds,
+                self.status,
+            )
+        )
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class Competition(object):
+    """
+    Competition is a object containing information about a competition.
+
+    :param venue: Venue of the competition.
+    :type venue: :class:`str`
+    :param competition: Competition name.
+    :type competition: :class:`str`
+    :param closes: Date and time string when the competition closes.
+    :type closes: :class:`str`
+    :param name: Name.
+    :type name: :class:`str`
+    :param number: Number of the competition.
+    :type number: :class:`int`
+    :param sport: Type of sport played for the competition.
+    :type sport: :class:`str`
+    :param game: Team versing each other.
+    :type game: :class:`str`
+    :param selections: Selection bets.
+    :type selections: iterable of :class:`~.Selection`
+    """
+    def __init__(self, venue, competition, closes, name, number, sport, game):
+        self.venue = venue
+        self.competition = competition
+        self.closes = closes
+        self.name = name
+        self.number = number
+        self.sport = sport
+        self.game = game
+        self.selections = set()
+
+    def add_selection(self, selection):
+        """
+        Add a new selection to the competition.
+
+        :param selection: Selection being added to the competition.
+        :type selections: :class:`~.Selection`
+        """
+        self.selections.add(selection)
+
+    def get_selections(self, key=None):
+        """
+        Get all the selections for the competition.
+
+        :param key: Callable that takes a single value and returns a
+            boolean value. This callable is used for sorting. If key is
+            omitted then the default sorted algorithm is used.
+        :type key: callable which takes a single argument and returns
+            a :class:`bool`
+        :returns: Iterable of selections for the compatition.
+        :rtype: iterable of :class:`Selection`
+        """
+        if key is None:
+            key = lambda x: x.number
+        return sorted(self.selections, key=key)
+
 
 class JSONParser(IStatsParser):
     """
@@ -40,6 +162,33 @@ class JSONParser(IStatsParser):
     def option_count(self):
         options = self.data.get("options", {})
         return len(options.get("option", []))
+
+    def get_competitions(self, name):
+        for each in self.data.get("options", {}).get("option", []):
+            if each.get("competition", "") != name:
+                continue
+
+            comp = Competition(
+                venue=each.get("venue"),
+                competition=each.get("competition"),
+                closes=each.get("close"),
+                name=each.get("name"),
+                number=int(each.get("number", 0)),
+                sport=each.get("sport"),
+                game=each.get("game"),
+            )
+
+            for sel in each.get("selections", {}).get("selection", []):
+                selection = Selection(
+                    number=int(sel.get("number", 0)),
+                    name=sel.get("name"),
+                    odds=int(sel.get("odds", 0)),
+                    status=sel.get("status"),
+                )
+
+                comp.add_selection(selection)
+
+            yield comp
 
 
 class XMLParser(IStatsParser):
@@ -128,3 +277,5 @@ if __name__ == "__main__":
     if ns.options is True:
         print("Available options: {}".format(reporter.option_count()))
 
+    for a in parser.get_competitions("Super Rugby"):
+        print(a.number, a.name, a.competition)
