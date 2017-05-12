@@ -1,4 +1,5 @@
 import abc
+import csv
 import json
 from lxml import etree
 
@@ -171,7 +172,7 @@ class JSONParser(IStatsParser):
             comp = Competition(
                 venue=each.get("venue"),
                 competition=each.get("competition"),
-                closes=each.get("close"),
+                closes=each.get("closes"),
                 name=each.get("name"),
                 number=int(each.get("number", 0)),
                 sport=each.get("sport"),
@@ -230,6 +231,44 @@ class Reporter(object):
         """
         return self.parser.option_count()
 
+    def dump_compentition_market_prices(self, name, fh):
+        """
+        Dump a competitions market prices to a CSV formatted file.
+
+        .. note::
+
+            CSV fields are:
+            Game,Closes,Name,Calculated Market Percentage
+
+        :param name: Competition name that you are dumping market stats for.
+        :type name: :class:`str`
+        :param fh: Write file handler to write to.
+        :type fh: :class:`file`
+        """
+        fieldnames = [
+            "Game",
+            "Closes",
+            "Name",
+            "Calculated Market Percentage",
+        ]
+
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        for each in self.parser.get_competitions(name):
+            market_price = calc_market_percentage(
+                sel.odds
+                for sel in each.get_selections()
+                if sel.odds > 0
+            )
+            writer.writerow(
+                {
+                    "Game": each.game,
+                    "Closes": each.closes,
+                    "Name": each.name,
+                    "Calculated Market Percentage": market_price,
+                }
+            )
+
     def summary(self):
         return (
             "Available options: {options_count}".format(
@@ -255,12 +294,30 @@ if __name__ == "__main__":
     )
 
     args.add_argument(
+        "--comp-dump",
+        metavar="FILENAME",
+        type=argparse.FileType("w"),
+        help="File to dump competition market prices to. --comp must "
+             "be given for dump to work."
+    )
+
+    args.add_argument(
+        "--comp",
+        metavar="NAME",
+        help="Competition name to search for."
+    )
+
+    args.add_argument(
         "--options",
         action="store_true",
         help="Show how many options are available."
     )
 
     ns = args.parse_args()
+
+    if ns.comp_dump and not ns.comp:
+        print("Missing `--comp` argument.")
+        sys.exit(os.EX_USAGE)
 
     # work out what type of parser we need to use.
     if ns.filename.name.endswith(".json"):
@@ -274,8 +331,10 @@ if __name__ == "__main__":
     reporter = Reporter(parser=parser)
     reporter.load(ns.filename)
 
+    # bump market stats
+    if ns.comp and ns.comp_dump:
+        reporter.dump_compentition_market_prices(ns.comp, ns.comp_dump)
+
+    # Print out the option count.
     if ns.options is True:
         print("Available options: {}".format(reporter.option_count()))
-
-    for a in parser.get_competitions("Super Rugby"):
-        print(a.number, a.name, a.competition)
