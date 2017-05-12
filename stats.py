@@ -1,3 +1,7 @@
+# pylint: disable=invalid-name
+"""
+Sport stats reporter.
+"""
 import abc
 import collections
 import csv
@@ -17,16 +21,16 @@ def calc_market_percentage(prices):
     value = 0.0
 
     for price in prices:
-      value = value + 1.0 / price
+        value = value + 1.0 / price
 
     return value
 
 
-class IStatsParser(object):
+class IStatsParser(object):  # pragma: no cover
     """
     Interface for a stats parser.
     """
-    metaclass=abc.ABCMeta
+    metaclass = abc.ABCMeta
 
     def __init__(self):
         self.data = None
@@ -74,7 +78,7 @@ class IStatsParser(object):
         pass
 
 
-class Selection(object):
+class Selection(object):  # pylint: disable=too-few-public-methods
     """
     Selection is a competition selection.
 
@@ -93,7 +97,7 @@ class Selection(object):
         self.odds = odds
         self.status = status
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return (
             "<{}> Number: {}, Odds: {}, Status: {}".format(
                 self.__class__.__name__,
@@ -103,7 +107,7 @@ class Selection(object):
             )
         )
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return self.__str__()
 
 
@@ -294,14 +298,14 @@ class Reporter(object):
         mp = 0
         largest = None
         for each in self.parser.get_competitions():
-                market_price = calc_market_percentage(
-                    sel.odds
-                    for sel in each.get_selections()
-                    if sel.odds > 0
-                )
-                if market_price > mp:
-                    largest = each.competition
-                    mp = market_price
+            market_price = calc_market_percentage(
+                sel.odds
+                for sel in each.get_selections()
+                if sel.odds > 0
+            )
+            if market_price > mp:
+                largest = each.competition
+                mp = market_price
         return largest
 
     def least_market_percentage(self):
@@ -314,14 +318,14 @@ class Reporter(object):
         mp = 100000  # just a random number
         least = None
         for each in self.parser.get_competitions():
-                market_price = calc_market_percentage(
-                    sel.odds
-                    for sel in each.get_selections()
-                    if sel.odds > 0
-                )
-                if market_price < mp:
-                    least = each.competition
-                    mp = market_price
+            market_price = calc_market_percentage(
+                sel.odds
+                for sel in each.get_selections()
+                if sel.odds > 0
+            )
+            if market_price < mp:
+                least = each.competition
+                mp = market_price
         return least
 
 
@@ -398,7 +402,7 @@ class Reporter(object):
         return summary
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import argparse
     import os
     import sys
