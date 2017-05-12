@@ -202,6 +202,41 @@ class XMLParser(IStatsParser):
     def option_count(self):
         return int(self.data.xpath("count(//options/option)"))
 
+    def get_competitions(self, name):
+        for each in self.data.xpath("//options/option"):
+            kwargs = {}
+            for key, value in each.items():
+                kwargs[key] = value
+
+            if kwargs.get("competition", "") != name:
+                continue
+
+            comp = Competition(
+                venue=kwargs.get("venue"),
+                competition=kwargs.get("competition"),
+                closes=kwargs.get("closes"),
+                name=kwargs.get("name"),
+                number=int(kwargs.get("number", 0)),
+                sport=kwargs.get("sport"),
+                game=kwargs.get("game"),
+            )
+
+            for sel in each.xpath("selections/selection"):
+                sel_kwargs = {}
+                for key, value in sel.items():
+                    sel_kwargs[key] = value
+
+                selection = Selection(
+                    number=int(sel.get("number", 0)),
+                    name=sel.get("name"),
+                    odds=int(sel.get("odds", 0)),
+                    status=sel.get("status"),
+                )
+
+                comp.add_selection(selection)
+
+            yield comp
+
 
 class Reporter(object):
     """
@@ -254,7 +289,11 @@ class Reporter(object):
 
         writer = csv.DictWriter(fh, fieldnames=fieldnames)
         writer.writeheader()
-        for each in self.parser.get_competitions(name):
+        comps = sorted(
+            self.parser.get_competitions(name),
+            key=lambda x: x.closes
+        )
+        for each in comps:
             market_price = calc_market_percentage(
                 sel.odds
                 for sel in each.get_selections()
