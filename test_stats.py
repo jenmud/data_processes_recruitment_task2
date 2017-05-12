@@ -3,6 +3,8 @@ import stats
 import unittest
 import lxml.etree
 
+from io import StringIO
+
 
 JSONFILE = os.path.join(
     os.path.dirname(__file__),
@@ -161,11 +163,19 @@ class TestReporter(unittest.TestCase):
             self.reporter.option_count(),
         )
 
-    def test_summary(self):
+    def test_dump_compentition_market_prices(self):
+        fh = StringIO()
+        self.reporter.dump_compentition_market_prices("Super Rugby", fh)
+        fh.seek(0)
+
         self.assertEqual(
-            "Available options: 543",
-            self.reporter.summary(),
+            "Game,Closes,Name,Calculated Market Percentage",
+            fh.readlines()[0].strip(),
         )
+
+    @unittest.skip("Not really testable.")
+    def test_summary(self):
+        pass
 
 class TestCompetition(unittest.TestCase):
     def test_add_selection(self):

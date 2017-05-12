@@ -344,7 +344,7 @@ class Reporter(object):
             categories[each.sport].append(each)
 
         summary = ""
-        for each in categories:
+        for each in sorted(categories):
             summary += "{}\n".format(each)
 
             mn = collections.defaultdict(int)
