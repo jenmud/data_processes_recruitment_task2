@@ -30,7 +30,7 @@ class IStatsParser(object):  # pragma: no cover
     """
     Interface for a stats parser.
     """
-    metaclass = abc.ABCMeta
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self):
         self.data = None
