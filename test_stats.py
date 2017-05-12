@@ -163,6 +163,18 @@ class TestReporter(unittest.TestCase):
             self.reporter.option_count(),
         )
 
+    def test_least_market_percentage(self):
+        self.assertEqual(
+            "NBA Playoffs-Rd 1 Series",
+            self.reporter.least_market_percentage(),
+        )
+
+    def test_largest_market_percentage(self):
+        self.assertEqual(
+            "Super Rugby",
+            self.reporter.largest_market_percentage(),
+        )
+
     def test_dump_compentition_market_prices(self):
         fh = StringIO()
         self.reporter.dump_compentition_market_prices("Super Rugby", fh)

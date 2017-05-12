@@ -284,6 +284,47 @@ class Reporter(object):
         """
         return self.parser.option_count()
 
+    def largest_market_percentage(self):
+        """
+        Return the competition with the larget market percentage.
+
+        :returns: Competition with the largest market percentage.
+        :rtype: :class:`str`
+        """
+        mp = 0
+        largest = None
+        for each in self.parser.get_competitions():
+                market_price = calc_market_percentage(
+                    sel.odds
+                    for sel in each.get_selections()
+                    if sel.odds > 0
+                )
+                if market_price > mp:
+                    largest = each.competition
+                    mp = market_price
+        return largest
+
+    def least_market_percentage(self):
+        """
+        Return the competition with the least market percentage.
+
+        :returns: Competition with the least market percentage.
+        :rtype: :class:`str`
+        """
+        mp = 100000  # just a random number
+        least = None
+        for each in self.parser.get_competitions():
+                market_price = calc_market_percentage(
+                    sel.odds
+                    for sel in each.get_selections()
+                    if sel.odds > 0
+                )
+                if market_price < mp:
+                    least = each.competition
+                    mp = market_price
+        return least
+
+
     def dump_compentition_market_prices(self, name, fh):
         """
         Dump a competitions market prices to a CSV formatted file.
@@ -399,6 +440,18 @@ if __name__ == "__main__":
         help="Show a complete summary report."
     )
 
+    args.add_argument(
+        "--least-market-percentage",
+        action="store_true",
+        help="Show the markets with the least market percentage"
+    )
+
+    args.add_argument(
+        "--largest-market-percentage",
+        action="store_true",
+        help="Show the markets with the largest market percentage"
+    )
+
     ns = args.parse_args()
 
     if ns.comp_dump and not ns.comp:
@@ -424,6 +477,20 @@ if __name__ == "__main__":
     # Print out the option count.
     if ns.options is True:
         print("Available options: {}".format(reporter.option_count()))
+
+    if ns.largest_market_percentage is True:
+        print(
+            "Competition with the largest market price: {}".format(
+                reporter.largest_market_percentage()
+            )
+        )
+
+    if ns.least_market_percentage is True:
+        print(
+            "Competition with the least market price: {}".format(
+                reporter.least_market_percentage()
+            )
+        )
 
     if ns.summary is True:
         print(reporter.summary())
