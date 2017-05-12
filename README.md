@@ -1,14 +1,38 @@
 # Data Processes Recruitment - Sport Stats
 
 This is a script that does some json and xml parsing of sport stats and
-generate a summary and additional stats like market price percentage.
+generates a summary and additional stats like market percentage.
 
 ## Requirements
 
 The script requires the sample files
 
+* lxml (as per [requirements.txt](https://raw.githubusercontent.com/jenmud/data_processes_recruitment_task2/master/requirements.txt))
 * [options.json](https://raw.githubusercontent.com/jenmud/data_processes_recruitment_task2/master/options.json)
 * [options.xml](https://raw.githubusercontent.com/jenmud/data_processes_recruitment_task2/master/options.xml)
+
+## Setup
+
+Best to have a virtual env to run the script.
+
+```bash
+$ virtualenv-3.5 /tmp/task2-demo
+Using base prefix '/usr'
+New python executable in /tmp/task2-demo/bin/python3
+Also creating executable in /tmp/task2-demo/bin/python
+Installing setuptools, pip, wheel...done.
+```
+
+Activate the environment and install dependencies
+
+```bash
+$ source /tmp/task2-demo/bin/activate
+$ pip install -r requirements.txt 
+Collecting lxml==3.7.3 (from -r requirements.txt (line 1))
+  Using cached lxml-3.7.3-cp35-cp35m-manylinux1_x86_64.whl
+Installing collected packages: lxml
+Successfully installed lxml-3.7.3
+```
 
 ## Usage
 
@@ -61,7 +85,7 @@ Available options: 543
 
 ### Calc the Super Rugby market percentage and save it to a csv file
 
-The this option save the output to a csv with the following fields
+This option saves the output to a csv with the following fields
 
 ```
 Game,Closes,Name,Calculated Market Percentage
@@ -306,5 +330,14 @@ Getting the smallest with flag `--least-market-percentage` or `--least` for shor
 
 ```bash
 $ python stats.py options.json --least
+Competition with the least market price: NBA Playoffs-Rd 1 Series
+```
+
+### Support for multiple args and output
+
+```bash
+$ python stats.py options.json --least --largest --options
+Available options: 543
+Competition with the largest market price: Super Rugby
 Competition with the least market price: NBA Playoffs-Rd 1 Series
 ```
