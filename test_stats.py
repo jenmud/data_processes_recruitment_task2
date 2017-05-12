@@ -104,6 +104,12 @@ class TestReporter(unittest.TestCase):
             lxml.etree._Element,
         )
 
+    def test_option_count(self):
+        self.assertEqual(
+            543,
+            self.reporter.option_count(),
+        )
+
     def test_summary(self):
         self.assertEqual(
             "Available options: 543",

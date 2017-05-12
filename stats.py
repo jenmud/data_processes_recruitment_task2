@@ -72,17 +72,27 @@ class Reporter(object):
         """
         self.parser.parse(fh)
 
+    def option_count(self):
+        """
+        Return the total amount of options available.
+
+        :returns: Total option count.
+        :rtype: :class:`int`
+        """
+        return self.parser.option_count()
+
     def summary(self):
-        options = self.parser.option_count()
         return (
             "Available options: {options_count}".format(
-                options_count=options,
+                options_count=self.option_count(),
             )
         )
 
 
 if __name__ == "__main__":
     import argparse
+    import os
+    import sys
 
     args = argparse.ArgumentParser(
         description="Generate a stat reports."
@@ -95,8 +105,15 @@ if __name__ == "__main__":
         help="File containing statics. Supported files as JSON and XML."
     )
 
+    args.add_argument(
+        "--options",
+        action="store_true",
+        help="Show how many options are available."
+    )
+
     ns = args.parse_args()
 
+    # work out what type of parser we need to use.
     if ns.filename.name.endswith(".json"):
         parser = JSONParser()
     elif ns.filename.name.endswith(".xml"):
@@ -108,4 +125,6 @@ if __name__ == "__main__":
     reporter = Reporter(parser=parser)
     reporter.load(ns.filename)
 
-    print(reporter.summary())
+    if ns.options is True:
+        print("Available options: {}".format(reporter.option_count()))
+
